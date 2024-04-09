@@ -1,0 +1,121 @@
+
+//https://algs4.cs.princeton.edu/52trie/TrieSET.java
+//My previous using HashMap, so I change the DLB to Map, delete the Arraylist.@interface
+public class DLBMap<V>  {
+    private DLBNode<V> root;
+
+    public DLBMap() {
+        root = null;
+    }
+
+    public V get(String key) {
+        if (key == null || key.length() == 0 || root == null) {
+            return null;
+        }
+
+        DLBNode<V> currentNode = root;
+        for (char c : key.toCharArray()) {
+            while (currentNode != null && currentNode.getLet() != c) {
+                currentNode = currentNode.getRight();
+            }
+
+            if (currentNode == null) {
+                return null;
+            }
+
+            currentNode = currentNode.getDown();
+        }
+
+        if (currentNode != null && currentNode.getLet() == '\0') {
+            return currentNode.getValue();
+        }
+
+        return null;
+    }
+
+    public void put(String key, V value) {
+        if (key == null || key.isEmpty()) {
+            return;
+        }
+
+        if (root == null) {
+            root = new DLBNode<V>(key.charAt(0));
+        }
+
+        DLBNode<V> cur = root;
+        for (int i = 0; i < key.length(); i++) {
+            char c = key.charAt(i);
+
+            while (cur.getLet() != c) {
+                if (cur.getRight() == null) {
+                    cur.setRight(new DLBNode<V>(c));
+                }
+                cur = cur.getRight();
+            }
+
+            if (i != key.length() - 1) {
+                if (cur.getDown() == null) {
+                    cur.setDown(new DLBNode<V>(key.charAt(i + 1)));
+                }
+                cur = cur.getDown();
+            }
+        }
+
+        if (cur.getDown() == null || cur.getDown().getLet() != '\0') {
+            cur.setDown(new DLBNode<V>('\0'));
+        }
+        cur.getDown().setValue(value);
+    }
+
+    private DLBNode<V>[] resizeArray(DLBNode<V>[] oldArray) {
+        DLBNode<V>[] newArray = new DLBNode[oldArray.length * 2+1];
+        for(int i=0;i<oldArray.length;i++) {
+            newArray[i] = oldArray[i];
+        }
+        return newArray;
+    }
+
+    public void remove(String key) {
+        if (key == null || key.length() == 0 || root == null) {
+            return;
+        }
+
+        DLBNode<V>[] path = new DLBNode[512];
+        int pathIndex = 0;
+        DLBNode<V> currentNode = root;
+        for (char c : key.toCharArray()) {
+            while (currentNode != null && currentNode.getLet() != c) {
+                if (pathIndex == path.length) {
+                    path = resizeArray(path);
+                }
+                path[pathIndex++] = currentNode;
+                currentNode = currentNode.getRight();
+            }
+
+            if (currentNode == null) {
+                return;
+            }
+
+            if (pathIndex == path.length) {
+                path = resizeArray(path);
+            }
+            path[pathIndex++] = currentNode;
+            currentNode = currentNode.getDown();
+        }
+
+        if (currentNode != null && currentNode.getLet() == '\0') {
+            currentNode = currentNode.getDown();
+            for (int i = pathIndex - 1; i >= 0; i--) {
+                DLBNode<V> node = path[i];
+                if (node.getDown() != null && node.getDown().getLet() == '\0' && node.getDown().getDown() == null) {
+                    if (node.getRight() != null) {
+                        node.setDown(node.getRight().getDown());
+                        node.setRight(node.getRight().getRight());
+                    } else {
+                        node.setDown(null);
+                    }
+                }
+            }
+        }
+    }
+}
